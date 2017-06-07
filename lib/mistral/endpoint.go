@@ -52,7 +52,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 
 		http.Error(w,
 			err.Error(),
-			http.StatusInternalServerError,
+			http.StatusUnprocessableEntity,
 		)
 		return
 	} else if hostID == 0 {
