@@ -55,6 +55,15 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 			http.StatusInternalServerError,
 		)
 		return
+	} else if hostID == 0 {
+		log.Warningf("Rejected invalid HostID 0 from %s",
+			r.RemoteAddr)
+
+		http.Error(w,
+			http.StatusText(http.StatusBadRequest),
+			http.StatusBadRequest,
+		)
+		return
 	}
 	ret := make(chan error)
 	Handlers[hostID%runtime.NumCPU()].Input <- Transport{
