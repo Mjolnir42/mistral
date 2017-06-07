@@ -34,3 +34,4 @@ _testmain.go
 # Dev
 attic/
 /mistral
+/cmd/mistral/mistral
