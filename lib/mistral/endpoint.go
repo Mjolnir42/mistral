@@ -23,6 +23,16 @@ import (
 func Endpoint(w http.ResponseWriter, r *http.Request,
 	params httprouter.Params) {
 
+	// no new requests are served if the service is
+	// considered unavailable
+	if unavailable {
+		http.Error(w,
+			http.StatusText(http.StatusServiceUnavailable),
+			http.StatusServiceUnavailable,
+		)
+		return
+	}
+
 	if r.Body == nil {
 		http.Error(w,
 			http.StatusText(http.StatusBadRequest),
@@ -77,6 +87,9 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 			"Could not write data for HostID %d from %s to Kafka: %s",
 			hostID, r.RemoteAddr, err.Error(),
 		)
+
+		// set the package variable unavailable to fail /health
+		unavailable = true
 
 		http.Error(w,
 			http.StatusText(http.StatusServiceUnavailable),

@@ -24,6 +24,9 @@ import (
 // Mistral handlers
 var Handlers map[int]Mistral
 
+// unavailable indicates that producing to Kafka returned errors
+var unavailable bool
+
 // Mistral produces messages received via its HTTP handler to Kafka
 type Mistral struct {
 	Num      int

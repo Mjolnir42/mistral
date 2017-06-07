@@ -71,6 +71,7 @@ func main() {
 	router := httprouter.New()
 
 	router.POST(miConf.Mistral.EndpointPath, mistral.Endpoint)
+	router.GET(`/health`, mistral.Health)
 	log.Fatal(http.ListenAndServe(listenURL.Host, router))
 }
 
