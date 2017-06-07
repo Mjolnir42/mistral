@@ -13,12 +13,24 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"github.com/client9/reopen"
 	ucl "github.com/nahanni/go-ucl"
 )
 
 // Config holds the runtime configuration which is expected to be
 // read from a UCL formatted file
 type Config struct {
+	// Log is the namespace for logging options
+	Log struct {
+		// Name of the logfile
+		File string `json:"log.file"`
+		// Path in wich to open the logfile
+		Path string `json:"log.path"`
+		// Reopen the logfile if SIGUSR2 is received
+		Rotate bool `json:"log.rotate.on.usr2,string"`
+		// Handle to the logfile
+		FH *reopen.FileWriter `json:"-"`
+	}
 	// Zookeeper is the namespace with options for Apache Zookeeper
 	Zookeeper struct {
 		// How often to publish offset updates to Zookeeper
@@ -51,6 +63,17 @@ type Config struct {
 		ListenPort         string `json:"listen.port"`
 		EndpointPath       string `json:"api.endpoint.path"`
 	} `json:"mistral"`
+	// DustDevil is the namespace with configuration options relating to
+	// forwarding Kafka read messages to an HTTP API
+	DustDevil struct {
+		HandlerQueueLength int    `json:"handler.queue.length,string"`
+		Endpoint           string `json:"api.endpoint"`
+		RetryCount         int    `json:"post.request.retry.count,string"`
+		RetryMinWaitTime   int    `json:"retry.min.wait.time.ms,string"`
+		RetryMaxWaitTime   int    `json:"retry.max.wait.time.ms,string"`
+		RequestTimeout     int    `json:"request.timeout.ms,string"`
+		StripStringMetrics bool   `json:"strip.string.metrics,string"`
+	} `json:"dustdevil"`
 }
 
 // FromFile sets Config c based on the file contents
