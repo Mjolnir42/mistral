@@ -9,6 +9,7 @@
 package main // import "github.com/mjolnir42/mistral/cmd/mistral"
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,10 +27,14 @@ import (
 )
 
 func main() {
+	// parse command line flags
+	var cliConfPath string
+	flag.StringVar(&cliConfPath, `config`, `mistral.conf`, `Configuration file location`)
+	flag.Parse()
 
 	// read runtime configuration
 	miConf := erebos.Config{}
-	if err := miConf.FromFile(`mistral.conf`); err != nil {
+	if err := miConf.FromFile(cliConfPath); err != nil {
 		log.Fatalf("Could not open configuration: %s", err)
 	}
 
