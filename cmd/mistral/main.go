@@ -10,11 +10,16 @@ package main // import "github.com/mjolnir42/mistral/cmd/mistral"
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"path/filepath"
 	"runtime"
+	"syscall"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/client9/reopen"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/mistral/lib/mistral"
@@ -23,7 +28,23 @@ import (
 func main() {
 	miConf := erebos.Config{}
 	if err := miConf.FromFile(`mistral.conf`); err != nil {
-		log.Fatalln(err)
+		log.Fatalf("Could not open configuration: %s", err)
+	}
+
+	if lfh, err := reopen.NewFileWriter(
+		filepath.Join(miConf.Log.Path, miConf.Log.File),
+	); err != nil {
+		log.Fatalf("Unable to open logfile: %s", err)
+	} else {
+		miConf.Log.FH = lfh
+	}
+	log.SetOutput(miConf.Log.FH)
+
+	// signal handler will reopen logfile on USR2
+	if miConf.Log.Rotate {
+		sigChanLogRotate := make(chan os.Signal, 1)
+		signal.Notify(sigChanLogRotate, syscall.SIGUSR2)
+		go erebos.Logrotate(sigChanLogRotate, miConf)
 	}
 
 	handlers := make(map[int]mistral.Mistral)
