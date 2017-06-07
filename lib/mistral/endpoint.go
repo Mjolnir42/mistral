@@ -79,8 +79,8 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		)
 
 		http.Error(w,
-			res.Error(),
-			http.StatusInternalServerError,
+			http.StatusText(http.StatusServiceUnavailable),
+			http.StatusServiceUnavailable,
 		)
 		return
 	}
