@@ -26,11 +26,14 @@ import (
 )
 
 func main() {
+
+	// read runtime configuration
 	miConf := erebos.Config{}
 	if err := miConf.FromFile(`mistral.conf`); err != nil {
 		log.Fatalf("Could not open configuration: %s", err)
 	}
 
+	// setup logfile
 	if lfh, err := reopen.NewFileWriter(
 		filepath.Join(miConf.Log.Path, miConf.Log.File),
 	); err != nil {
@@ -40,16 +43,19 @@ func main() {
 	}
 	log.SetOutput(miConf.Log.FH)
 
-	// signal handler will reopen logfile on USR2
+	// signal handler will reopen logfile on USR2 if requested
 	if miConf.Log.Rotate {
 		sigChanLogRotate := make(chan os.Signal, 1)
 		signal.Notify(sigChanLogRotate, syscall.SIGUSR2)
 		go erebos.Logrotate(sigChanLogRotate, miConf)
 	}
 
+	// register handlers with package, used by the HTTP endpoint
+	// to look up the correct handler
 	handlers := make(map[int]mistral.Mistral)
 	mistral.Handlers = handlers
 
+	// start one handler per CPU
 	for i := 0; i < runtime.NumCPU(); i++ {
 		h := mistral.Mistral{
 			Num: i,
@@ -61,6 +67,7 @@ func main() {
 		go h.Start()
 	}
 
+	// assemble listen address
 	listenURL := &url.URL{}
 	listenURL.Scheme = `http`
 	listenURL.Host = fmt.Sprintf("%s:%s",
@@ -68,10 +75,12 @@ func main() {
 		miConf.Mistral.ListenPort,
 	)
 
+	// setup http routes
 	router := httprouter.New()
-
 	router.POST(miConf.Mistral.EndpointPath, mistral.Endpoint)
 	router.GET(`/health`, mistral.Health)
+
+	// start HTTPserver
 	log.Fatal(http.ListenAndServe(listenURL.Host, router))
 }
 
