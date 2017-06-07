@@ -44,8 +44,12 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	// get the hostID from the received data
 	hostID, err := legacy.PeekHostID(buf)
 	if err != nil {
+		log.Warningf("Could not get HostID in data from %s: %s",
+			r.RemoteAddr, err.Error())
+
 		http.Error(w,
 			err.Error(),
 			http.StatusInternalServerError,
@@ -60,12 +64,20 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	}
 	res := <-ret
 	if res != nil {
+		log.Errorf(
+			"Could not write data for HostID %d from %s to Kafka: %s",
+			hostID, r.RemoteAddr, err.Error(),
+		)
+
 		http.Error(w,
 			res.Error(),
 			http.StatusInternalServerError,
 		)
 		return
 	}
+	log.Infof("Processed metric data for HostID %d from %s\n",
+		hostID, r.RemoteAddr)
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(nil)
 }
