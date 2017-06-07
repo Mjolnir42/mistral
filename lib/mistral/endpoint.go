@@ -9,10 +9,12 @@
 package mistral
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"runtime"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/legacy"
 )
@@ -29,6 +31,18 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	buf, _ := ioutil.ReadAll(r.Body)
+
+	// verify the received data can be parsed
+	if err := json.Unmarshal(buf, legacy.MetricBatch{}); err != nil {
+		log.Warningf("Rejected unprocessable data from %s: %s",
+			r.RemoteAddr, err.Error())
+
+		http.Error(w,
+			err.Error(),
+			http.StatusUnprocessableEntity,
+		)
+		return
+	}
 
 	hostID, err := legacy.PeekHostID(buf)
 	if err != nil {
