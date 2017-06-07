@@ -50,7 +50,7 @@
 		},
 		{
 			"ImportPath": "github.com/mjolnir42/legacy",
-			"Rev": "2c36c0f2fe46c927b1f7b6fa74deb9931906a652"
+			"Rev": "dfa4f2a71da96b8559b0f372120baf9b5e4b6820"
 		},
 		{
 			"ImportPath": "github.com/nahanni/go-ucl",
