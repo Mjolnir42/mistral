@@ -23,14 +23,14 @@ type Config struct {
 	// Log is the namespace for logging options
 	Log struct {
 		// Name of the logfile
-		File string `json:"log.file"`
+		File string `json:"file"`
 		// Path in wich to open the logfile
-		Path string `json:"log.path"`
+		Path string `json:"path"`
 		// Reopen the logfile if SIGUSR2 is received
-		Rotate bool `json:"log.rotate.on.usr2,string"`
+		Rotate bool `json:"rotate.on.usr2,string"`
 		// Handle to the logfile
 		FH *reopen.FileWriter `json:"-"`
-	}
+	} `json:"log"`
 	// Zookeeper is the namespace with options for Apache Zookeeper
 	Zookeeper struct {
 		// How often to publish offset updates to Zookeeper
