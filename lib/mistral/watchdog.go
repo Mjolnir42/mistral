@@ -11,7 +11,7 @@ package mistral
 import (
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 // init starts the watchdog
@@ -30,7 +30,7 @@ func watchdog() {
 				tock.Stop()
 				// allow the loadbalancer to pick up the failing health
 				time.Sleep(70 * time.Second)
-				log.Fatalln(`Watchdog terminated Mistral: service unavailable`)
+				logrus.Fatalln(`Watchdog terminated Mistral: service unavailable`)
 			}
 		}
 	}

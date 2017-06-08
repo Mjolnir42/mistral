@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"runtime"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/legacy"
 )
@@ -44,7 +44,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 
 	// verify the received data can be parsed
 	if err := json.Unmarshal(buf, &legacy.MetricBatch{}); err != nil {
-		log.Warningf("Rejected unprocessable data from %s: %s",
+		logrus.Warningf("Rejected unprocessable data from %s: %s",
 			r.RemoteAddr, err.Error())
 
 		http.Error(w,
@@ -57,7 +57,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	// get the hostID from the received data
 	hostID, err := legacy.PeekHostID(buf)
 	if err != nil {
-		log.Warningf("Could not get HostID in data from %s: %s",
+		logrus.Warningf("Could not get HostID in data from %s: %s",
 			r.RemoteAddr, err.Error())
 
 		http.Error(w,
@@ -66,7 +66,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		)
 		return
 	} else if hostID == 0 {
-		log.Warningf("Rejected invalid HostID 0 from %s",
+		logrus.Warningf("Rejected invalid HostID 0 from %s",
 			r.RemoteAddr)
 
 		http.Error(w,
@@ -83,7 +83,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	}
 	res := <-ret
 	if res != nil {
-		log.Errorf(
+		logrus.Errorf(
 			"Could not write data for HostID %d from %s to Kafka: %s",
 			hostID, r.RemoteAddr, res.Error(),
 		)
@@ -97,7 +97,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		)
 		return
 	}
-	log.Infof("Processed metric data for HostID %d from %s",
+	logrus.Infof("Processed metric data for HostID %d from %s",
 		hostID, r.RemoteAddr)
 
 	w.WriteHeader(http.StatusOK)

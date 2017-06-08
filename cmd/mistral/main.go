@@ -19,8 +19,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"syscall"
+	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/client9/reopen"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
@@ -33,6 +34,14 @@ func init() {
 	l := logrus.New()
 	l.Out = ioutil.Discard
 	zk.DefaultLogger = l
+
+	// set standard logger options
+	std := logrus.StandardLogger()
+	std.Formatter = &logrus.TextFormatter{
+		DisableColors:   true,
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339Nano,
+	}
 }
 
 func main() {
@@ -44,18 +53,19 @@ func main() {
 	// read runtime configuration
 	miConf := erebos.Config{}
 	if err := miConf.FromFile(cliConfPath); err != nil {
-		log.Fatalf("Could not open configuration: %s", err)
+		logrus.Fatalf("Could not open configuration: %s", err)
 	}
 
 	// setup logfile
 	if lfh, err := reopen.NewFileWriter(
 		filepath.Join(miConf.Log.Path, miConf.Log.File),
 	); err != nil {
-		log.Fatalf("Unable to open logfile: %s", err)
+		logrus.Fatalf("Unable to open logfile: %s", err)
 	} else {
 		miConf.Log.FH = lfh
 	}
-	log.SetOutput(miConf.Log.FH)
+	logrus.SetOutput(miConf.Log.FH)
+	logrus.Infoln(`Starting MISTRAL...`)
 
 	// signal handler will reopen logfile on USR2 if requested
 	if miConf.Log.Rotate {
@@ -79,6 +89,7 @@ func main() {
 		}
 		handlers[i] = h
 		go h.Start()
+		logrus.Infof("Launched Mistral handler #%d", i)
 	}
 
 	// assemble listen address
@@ -95,7 +106,7 @@ func main() {
 	router.GET(`/health`, mistral.Health)
 
 	// start HTTPserver
-	log.Fatal(http.ListenAndServe(listenURL.Host, router))
+	logrus.Fatal(http.ListenAndServe(listenURL.Host, router))
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
