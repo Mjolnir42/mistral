@@ -44,11 +44,17 @@ type Config struct {
 	// Kafka is the namespace with options for Apache Kafka
 	Kafka struct {
 		// Name of the consumergroup to join
-		ConsumerGroup string `json:"kafka.consumer.group.name"`
+		ConsumerGroup string `json:"consumer.group.name"`
 		// Which topics to consume from
-		ConsumerTopics string `json:"kafka.consumer.topics"`
+		ConsumerTopics string `json:"consumer.topics"`
 		// Which topic to produce to
-		ProducerTopic string `json:"kafka.producer.topic"`
+		ProducerTopic string `json:"producer.topic"`
+		// Producer-Response behaviour: NoResponse, WaitForLocal or WaitForAll
+		ProducerResponseStrategy string `json:"producer.response.strategy"`
+		// Producer retry attempts
+		ProducerRetry int `json:"producer.retry.attempts,string"`
+		// Keepalive interval in milliseconds
+		Keepalive int `json:"keepalive.ms,string"`
 	} `json:"kafka"`
 	// Twister is the namespace with configuration options relating to
 	// the splitting of metric batches
