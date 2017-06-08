@@ -67,9 +67,31 @@ func (m *Mistral) Start() {
 	}
 
 	config := sarama.NewConfig()
-	config.Net.KeepAlive = 5 * time.Second
-	config.Producer.RequiredAcks = sarama.WaitForLocal
-	config.Producer.Retry.Max = 5
+	// set producer transport keepalive
+	switch m.Config.Kafka.Keepalive {
+	case 0:
+		config.Net.KeepAlive = 3 * time.Second
+	default:
+		config.Net.KeepAlive = time.Duration(m.Config.Kafka.Keepalive) * time.Millisecond
+	}
+	// set our required persistence confidence for producing
+	switch m.Config.Kafka.ProducerResponseStrategy {
+	case `NoResponse`:
+		config.Producer.RequiredAcks = sarama.NoResponse
+	case `WaitForLocal`:
+		config.Producer.RequiredAcks = sarama.WaitForLocal
+	case `WaitForAll`:
+		config.Producer.RequiredAcks = sarama.WaitForAll
+	default:
+		config.Producer.RequiredAcks = sarama.WaitForLocal
+	}
+	// set how often to retry producing
+	switch m.Config.Kafka.ProducerRetry {
+	case 0:
+		config.Producer.Retry.Max = 3
+	default:
+		config.Producer.Retry.Max = m.Config.Kafka.ProducerRetry
+	}
 	config.Producer.Partitioner = sarama.NewHashPartitioner
 	config.ClientID = fmt.Sprintf("mistral.%s", host)
 
