@@ -85,7 +85,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	if res != nil {
 		log.Errorf(
 			"Could not write data for HostID %d from %s to Kafka: %s",
-			hostID, r.RemoteAddr, err.Error(),
+			hostID, r.RemoteAddr, res.Error(),
 		)
 
 		// set the package variable unavailable to fail /health
