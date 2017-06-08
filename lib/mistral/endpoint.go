@@ -43,7 +43,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	buf, _ := ioutil.ReadAll(r.Body)
 
 	// verify the received data can be parsed
-	if err := json.Unmarshal(buf, legacy.MetricBatch{}); err != nil {
+	if err := json.Unmarshal(buf, &legacy.MetricBatch{}); err != nil {
 		log.Warningf("Rejected unprocessable data from %s: %s",
 			r.RemoteAddr, err.Error())
 
