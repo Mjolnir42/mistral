@@ -97,7 +97,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		)
 		return
 	}
-	log.Infof("Processed metric data for HostID %d from %s\n",
+	log.Infof("Processed metric data for HostID %d from %s",
 		hostID, r.RemoteAddr)
 
 	w.WriteHeader(http.StatusOK)
