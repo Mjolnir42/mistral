@@ -11,6 +11,7 @@ package main // import "github.com/mjolnir42/mistral/cmd/mistral"
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,7 +25,15 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/mistral/lib/mistral"
+	"github.com/samuel/go-zookeeper/zk"
 )
+
+func init() {
+	// Discard logspam from Zookeeper library
+	l := logrus.New()
+	l.Out = ioutil.Discard
+	zk.DefaultLogger = l
+}
 
 func main() {
 	// parse command line flags
