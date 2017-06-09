@@ -47,7 +47,8 @@ func init() {
 func main() {
 	// parse command line flags
 	var cliConfPath string
-	flag.StringVar(&cliConfPath, `config`, `mistral.conf`, `Configuration file location`)
+	flag.StringVar(&cliConfPath, `config`, `mistral.conf`,
+		`Configuration file location`)
 	flag.Parse()
 
 	// read runtime configuration
