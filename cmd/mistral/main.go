@@ -31,17 +31,10 @@ import (
 
 func init() {
 	// Discard logspam from Zookeeper library
-	l := logrus.New()
-	l.Out = ioutil.Discard
-	zk.DefaultLogger = l
+	erebos.DisableZKLogger()
 
 	// set standard logger options
-	std := logrus.StandardLogger()
-	std.Formatter = &logrus.TextFormatter{
-		DisableColors:   true,
-		FullTimestamp:   true,
-		TimestampFormat: time.RFC3339Nano,
-	}
+	erebos.SetLogrusOptions()
 }
 
 func main() {
