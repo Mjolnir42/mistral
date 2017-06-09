@@ -11,7 +11,6 @@ package main // import "github.com/mjolnir42/mistral/cmd/mistral"
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,14 +18,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"syscall"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/client9/reopen"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/mistral/lib/mistral"
-	"github.com/samuel/go-zookeeper/zk"
 )
 
 func init() {
