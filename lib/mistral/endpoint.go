@@ -12,10 +12,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"runtime"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/julienschmidt/httprouter"
+	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/legacy"
 )
 
@@ -76,11 +76,11 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	ret := make(chan error)
-	Handlers[hostID%runtime.NumCPU()].Input <- Transport{
+	Dispatch(erebos.Transport{
 		HostID: hostID,
 		Value:  buf,
 		Return: ret,
-	}
+	})
 	res := <-ret
 	if res != nil {
 		logrus.Errorf(
