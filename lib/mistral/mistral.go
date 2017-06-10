@@ -23,10 +23,14 @@ import (
 // Handlers must be set before Mistral.Start is called for
 // the first time. It is used by Endpoint to look up the running
 // Mistral handlers
-var Handlers map[int]Mistral
+var Handlers map[int]erebos.Handler
 
 // unavailable indicates that producing to Kafka returned errors
 var unavailable bool
+
+func init() {
+	Handlers = make(map[int]erebos.Handler)
+}
 
 // Mistral produces messages received via its HTTP handler to Kafka
 type Mistral struct {

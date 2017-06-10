@@ -67,11 +67,6 @@ func main() {
 		go erebos.Logrotate(sigChanLogRotate, miConf)
 	}
 
-	// register handlers with package, used by the HTTP endpoint
-	// to look up the correct handler
-	handlers := make(map[int]mistral.Mistral)
-	mistral.Handlers = handlers
-
 	// setup metrics
 	pfxRegistry := metrics.NewPrefixedRegistry(`mistral`)
 	metrics.NewRegisteredMeter(`.messages`, pfxRegistry)
@@ -95,7 +90,7 @@ func main() {
 			Config:  &miConf,
 			Metrics: &pfxRegistry,
 		}
-		handlers[i] = h
+		mistral.Handlers[i] = &h
 		go h.Start()
 		logrus.Infof("Launched Mistral handler #%d", i)
 	}
