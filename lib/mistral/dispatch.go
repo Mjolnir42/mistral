@@ -15,11 +15,12 @@ import (
 )
 
 // Dispatch implements erebos.Dispatcher
-func Dispatch(msg erebos.Transport) {
+func Dispatch(msg erebos.Transport) error {
 	// send all messages with the same HostID to the same handler
 	// to keep the ordering intact
 
 	Handlers[msg.HostID%runtime.NumCPU()].InputChannel() <- &msg
+	return nil
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
