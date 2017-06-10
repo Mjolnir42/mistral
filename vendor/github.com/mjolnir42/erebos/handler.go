@@ -11,7 +11,7 @@ package erebos
 // Handler represents an erebos compatible application handler
 type Handler interface {
 	Start()
-	InputChannel() chan Transport
+	InputChannel() chan *Transport
 	ShutdownChannel() chan struct{}
 }
 
