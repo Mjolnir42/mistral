@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file.
  */
 
-package mistral
+package mistral // import "github.com/mjolnir42/mistral/lib/mistral"
 
 import (
 	"net/http"
