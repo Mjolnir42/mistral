@@ -18,12 +18,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/client9/reopen"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/mistral/lib/mistral"
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 func init() {
@@ -70,13 +72,28 @@ func main() {
 	handlers := make(map[int]mistral.Mistral)
 	mistral.Handlers = handlers
 
+	// setup metrics
+	pfxRegistry := metrics.NewPrefixedRegistry(`mistral`)
+	metrics.NewRegisteredMeter(`.messages`, pfxRegistry)
+
+	go func(r *metrics.Registry) {
+		beat := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-beat.C:
+				(*r).Each(printMetrics)
+			}
+		}
+	}(&pfxRegistry)
+
 	// start one handler per CPU
 	for i := 0; i < runtime.NumCPU(); i++ {
 		h := mistral.Mistral{
 			Num: i,
 			Input: make(chan mistral.Transport,
 				miConf.Mistral.HandlerQueueLength),
-			Config: &miConf,
+			Config:  &miConf,
+			Metrics: &pfxRegistry,
 		}
 		handlers[i] = h
 		go h.Start()
@@ -98,6 +115,14 @@ func main() {
 
 	// start HTTPserver
 	logrus.Fatal(http.ListenAndServe(listenURL.Host, router))
+}
+
+func printMetrics(metric string, v interface{}) {
+	switch v.(type) {
+	case *metrics.StandardMeter:
+		value := v.(*metrics.StandardMeter)
+		fmt.Fprintf(os.Stderr, "%s.avg.rate.1min: %f\n", metric, value.Rate1())
+	}
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix

@@ -16,6 +16,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/mjolnir42/erebos"
+	metrics "github.com/rcrowley/go-metrics"
 	kazoo "github.com/wvanbergen/kazoo-go"
 )
 
@@ -33,6 +34,7 @@ type Mistral struct {
 	Input    chan Transport
 	Config   *erebos.Config
 	producer sarama.SyncProducer
+	Metrics  *metrics.Registry
 }
 
 // Transport is a small wrapper between the HTTP handlers and Mistral
@@ -104,10 +106,12 @@ func (m *Mistral) Start() {
 
 // run is the event loop for Mistral
 func (m *Mistral) run() {
+	mtr := metrics.GetOrRegisterMeter(`.messages`, *m.Metrics)
 	for {
 		select {
 		case msg := <-m.Input:
 			m.process(&msg)
+			mtr.Mark(1)
 		}
 	}
 	// currently unreachable until graceful shutdown is supported
