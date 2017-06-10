@@ -85,7 +85,7 @@ func main() {
 	for i := 0; i < runtime.NumCPU(); i++ {
 		h := mistral.Mistral{
 			Num: i,
-			Input: make(chan mistral.Transport,
+			Input: make(chan erebos.Transport,
 				miConf.Mistral.HandlerQueueLength),
 			Config:  &miConf,
 			Metrics: &pfxRegistry,
