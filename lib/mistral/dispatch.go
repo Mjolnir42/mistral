@@ -19,7 +19,7 @@ func Dispatch(msg erebos.Transport) {
 	// send all messages with the same HostID to the same handler
 	// to keep the ordering intact
 
-	Handlers[msg.HostID%runtime.NumCPU()].InputChannel() <- msg
+	Handlers[msg.HostID%runtime.NumCPU()].InputChannel() <- &msg
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix

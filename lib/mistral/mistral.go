@@ -31,8 +31,9 @@ func init() {
 // Mistral produces messages received via its HTTP handler to Kafka
 type Mistral struct {
 	Num      int
-	Input    chan erebos.Transport
+	Input    chan *erebos.Transport
 	Shutdown chan struct{}
+	Death    chan error
 	Config   *erebos.Config
 	producer sarama.SyncProducer
 	Metrics  *metrics.Registry
@@ -41,15 +42,35 @@ type Mistral struct {
 // run is the event loop for Mistral
 func (m *Mistral) run() {
 	mtr := metrics.GetOrRegisterMeter(`.messages`, *m.Metrics)
+runloop:
 	for {
 		select {
+		case <-m.Shutdown:
+			break runloop
 		case msg := <-m.Input:
-			m.process(&msg)
+			if msg == nil {
+				// read from closed Input channel before closed
+				// Shutdown channel
+				continue runloop
+			}
+			m.process(msg)
 			mtr.Mark(1)
 		}
 	}
-	// currently unreachable until graceful shutdown is supported
-	//m.producer.Close()
+
+	// drain the input channel
+drainloop:
+	for {
+		select {
+		case msg := <-m.Input:
+			if msg == nil {
+				// channel is closed
+				break drainloop
+			}
+			m.process(msg)
+		}
+	}
+	m.producer.Close()
 }
 
 // process sends the received message to Kafka
@@ -62,6 +83,11 @@ func (m *Mistral) process(msg *erebos.Transport) {
 		Value: sarama.ByteEncoder(msg.Value),
 	})
 	msg.Return <- err
+}
+
+// SetUnavailable switches the private package variable to true
+func SetUnavailable() {
+	unavailable = true
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix

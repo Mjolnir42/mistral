@@ -9,6 +9,7 @@
 package main // import "github.com/mjolnir42/mistral/cmd/mistral"
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -67,9 +68,17 @@ func main() {
 		go erebos.Logrotate(sigChanLogRotate, miConf)
 	}
 
+	// setup signal receiver for graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	// this channel is used by the handlers on error
+	handlerDeath := make(chan error)
+
 	// setup metrics
 	pfxRegistry := metrics.NewPrefixedRegistry(`mistral`)
 	metrics.NewRegisteredMeter(`.messages`, pfxRegistry)
+	metricShutdown := make(chan struct{})
 
 	go func(r *metrics.Registry) {
 		beat := time.NewTicker(10 * time.Second)
@@ -77,18 +86,22 @@ func main() {
 			select {
 			case <-beat.C:
 				(*r).Each(printMetrics)
+			case <-metricShutdown:
+				break
 			}
 		}
 	}(&pfxRegistry)
 
-	// start one handler per CPU
+	// start application handlers
 	for i := 0; i < runtime.NumCPU(); i++ {
 		h := mistral.Mistral{
 			Num: i,
-			Input: make(chan erebos.Transport,
+			Input: make(chan *erebos.Transport,
 				miConf.Mistral.HandlerQueueLength),
-			Config:  &miConf,
-			Metrics: &pfxRegistry,
+			Shutdown: make(chan struct{}),
+			Death:    handlerDeath,
+			Config:   &miConf,
+			Metrics:  &pfxRegistry,
 		}
 		mistral.Handlers[i] = &h
 		go h.Start()
@@ -109,7 +122,63 @@ func main() {
 	router.GET(`/health`, mistral.Health)
 
 	// start HTTPserver
-	logrus.Fatal(http.ListenAndServe(listenURL.Host, router))
+	srv := &http.Server{
+		Addr:    listenURL.Host,
+		Handler: router,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			handlerDeath <- err
+		}
+	}()
+
+	// the main loop
+runloop:
+	for {
+		select {
+		case <-c:
+			logrus.Infoln(`Received shutdown signal`)
+			break runloop
+		case err := <-handlerDeath:
+			logrus.Errorf("Handler died: %s", err.Error())
+			break runloop
+		}
+	}
+	// switch the application to unavailable which will cause
+	// healthchecks to fail. The shutdown race against the watchdog
+	// begins. All new http connections will now also fail.
+	mistral.SetUnavailable()
+
+	// close all handlers
+	close(metricShutdown)
+	for i := range mistral.Handlers {
+		close(mistral.Handlers[i].ShutdownChannel())
+		close(mistral.Handlers[i].InputChannel())
+	}
+
+	// read all additional handler errors if required
+drainloop:
+	for {
+		select {
+		case err := <-handlerDeath:
+			logrus.Errorf("Handler died: %s", err.Error())
+		case <-time.After(time.Millisecond * 10):
+			break drainloop
+		}
+	}
+
+	// give goroutines that were blocked on handlerDeath channel
+	// a chance to exit
+	<-time.After(time.Millisecond * 10)
+
+	// stop http server
+	ctx, cancel := context.WithTimeout(
+		context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		logrus.Warnf("HTTP shutdown error: %s", err.Error())
+	}
+	logrus.Infoln(`MISTRAL shutdown complete`)
 }
 
 func printMetrics(metric string, v interface{}) {

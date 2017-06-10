@@ -23,24 +23,32 @@ import (
 // Start sets up a Mistral application handler
 func (m *Mistral) Start() {
 	if len(Handlers) == 0 {
-		panic(`Incorrectly set handlers`)
+		m.Death <- fmt.Errorf(`Incorrectly set handlers`)
+		<-m.Shutdown
+		return
 	}
 
 	kz, err := kazoo.NewKazooFromConnectionString(
 		m.Config.Zookeeper.Connect, nil)
 	if err != nil {
-		panic(err)
+		m.Death <- err
+		<-m.Shutdown
+		return
 	}
 	brokers, err := kz.BrokerList()
 	if err != nil {
 		kz.Close()
-		panic(err)
+		m.Death <- err
+		<-m.Shutdown
+		return
 	}
 	kz.Close()
 
 	host, err := os.Hostname()
 	if err != nil {
-		panic(err)
+		m.Death <- err
+		<-m.Shutdown
+		return
 	}
 
 	config := sarama.NewConfig()
@@ -74,13 +82,15 @@ func (m *Mistral) Start() {
 
 	m.producer, err = sarama.NewSyncProducer(brokers, config)
 	if err != nil {
-		panic(err)
+		m.Death <- err
+		<-m.Shutdown
+		return
 	}
 	m.run()
 }
 
 // InputChannel returns the data input channel
-func (m *Mistral) InputChannel() chan erebos.Transport {
+func (m *Mistral) InputChannel() chan *erebos.Transport {
 	return m.Input
 }
 
