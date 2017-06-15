@@ -23,7 +23,7 @@ func FormatMetrics(batch *legacy.PluginMetricBatch) func(string, interface{}) {
 			value := v.(*metrics.StandardMeter)
 			batch.Metrics = append(batch.Metrics, legacy.PluginMetric{
 				Type:   `float`,
-				Metric: fmt.Sprintf("/%s/avg/rate/1min", metric),
+				Metric: fmt.Sprintf("%s/avg/rate/1min", metric),
 				Value: legacy.MetricValue{
 					FlpVal: value.Rate1(),
 				},

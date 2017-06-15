@@ -77,8 +77,8 @@ func main() {
 	handlerDeath := make(chan error)
 
 	// setup metrics
-	pfxRegistry := metrics.NewPrefixedRegistry(`mistral`)
-	metrics.NewRegisteredMeter(`.messages`, pfxRegistry)
+	pfxRegistry := metrics.NewPrefixedRegistry(`/mistral`)
+	metrics.NewRegisteredMeter(`/messages`, pfxRegistry)
 	mistral.MtrReg = &pfxRegistry
 
 	ms := legacy.NewMetricSocket(&miConf, &pfxRegistry, handlerDeath, mistral.FormatMetrics)
