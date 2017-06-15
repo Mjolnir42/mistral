@@ -162,7 +162,7 @@ drainloop:
 		case err := <-ms.Errors:
 			logrus.Errorf("Socket error: %s", err.Error())
 		case err := <-handlerDeath:
-			logrus.Errorf("Handler died: %s", err.Error())
+			logrus.Errorf("Handler error: %s", err.Error())
 		case <-time.After(time.Millisecond * 10):
 			break drainloop
 		}

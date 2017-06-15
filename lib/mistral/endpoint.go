@@ -33,6 +33,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	// no new requests are served if the service is
 	// considered unavailable
 	if unavailable {
+		logrus.Infof("Unavailable - request from %s rejected", r.RemoteAddr)
 		http.Error(w,
 			http.StatusText(http.StatusServiceUnavailable),
 			http.StatusServiceUnavailable,
@@ -41,6 +42,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	}
 
 	if r.Body == nil {
+		logrus.Warningf("Rejected empty request body from %s", r.RemoteAddr)
 		http.Error(w,
 			http.StatusText(http.StatusBadRequest),
 			http.StatusBadRequest,
