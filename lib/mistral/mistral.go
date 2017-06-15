@@ -21,6 +21,9 @@ import (
 // Mistral handlers
 var Handlers map[int]erebos.Handler
 
+// MtrReg is the go-metrics Registry reference for the HTTP handler functions
+var MtrReg *metrics.Registry
+
 // unavailable indicates that producing to Kafka returned errors
 var unavailable bool
 
@@ -41,7 +44,7 @@ type Mistral struct {
 
 // run is the event loop for Mistral
 func (m *Mistral) run() {
-	mtr := metrics.GetOrRegisterMeter(`.messages`, *m.Metrics)
+	mtr := metrics.GetOrRegisterMeter(`/messages`, *m.Metrics)
 runloop:
 	for {
 		select {

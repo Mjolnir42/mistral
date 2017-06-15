@@ -12,6 +12,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 // Health is the HTTP API healthcheck for Mistral. It returns 204
@@ -19,6 +20,12 @@ import (
 // errors
 func Health(w http.ResponseWriter, r *http.Request,
 	_ httprouter.Params) {
+
+	// count /health requests against received http requests
+	if MtrReg != nil {
+		mtr := metrics.GetOrRegisterMeter(`/requests`, *MtrReg)
+		mtr.Mark(1)
+	}
 
 	if unavailable {
 

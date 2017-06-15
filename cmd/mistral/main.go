@@ -25,6 +25,7 @@ import (
 	"github.com/client9/reopen"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
+	"github.com/mjolnir42/legacy"
 	"github.com/mjolnir42/mistral/lib/mistral"
 	metrics "github.com/rcrowley/go-metrics"
 )
@@ -78,19 +79,13 @@ func main() {
 	// setup metrics
 	pfxRegistry := metrics.NewPrefixedRegistry(`mistral`)
 	metrics.NewRegisteredMeter(`.messages`, pfxRegistry)
-	metricShutdown := make(chan struct{})
+	mistral.MtrReg = &pfxRegistry
 
-	go func(r *metrics.Registry) {
-		beat := time.NewTicker(10 * time.Second)
-		for {
-			select {
-			case <-beat.C:
-				(*r).Each(printMetrics)
-			case <-metricShutdown:
-				break
-			}
-		}
-	}(&pfxRegistry)
+	ms := legacy.NewMetricSocket(&miConf, &pfxRegistry, handlerDeath, mistral.FormatMetrics)
+	if miConf.Misc.ProduceMetrics {
+		logrus.Info(`Launched metrics producer socket`)
+		go ms.Run()
+	}
 
 	// start application handlers
 	for i := 0; i < runtime.NumCPU(); i++ {
@@ -137,6 +132,8 @@ func main() {
 runloop:
 	for {
 		select {
+		case err := <-ms.Errors:
+			logrus.Errorf("Socket error: %s", err.Error())
 		case <-c:
 			logrus.Infoln(`Received shutdown signal`)
 			break runloop
@@ -152,7 +149,7 @@ runloop:
 	mistral.SetUnavailable()
 
 	// close all handlers
-	close(metricShutdown)
+	close(ms.Shutdown)
 	for i := range mistral.Handlers {
 		close(mistral.Handlers[i].ShutdownChannel())
 		close(mistral.Handlers[i].InputChannel())
@@ -162,6 +159,8 @@ runloop:
 drainloop:
 	for {
 		select {
+		case err := <-ms.Errors:
+			logrus.Errorf("Socket error: %s", err.Error())
 		case err := <-handlerDeath:
 			logrus.Errorf("Handler died: %s", err.Error())
 		case <-time.After(time.Millisecond * 10):
@@ -183,14 +182,6 @@ drainloop:
 	logrus.Infoln(`MISTRAL shutdown complete`)
 	if fault {
 		os.Exit(1)
-	}
-}
-
-func printMetrics(metric string, v interface{}) {
-	switch v.(type) {
-	case *metrics.StandardMeter:
-		value := v.(*metrics.StandardMeter)
-		fmt.Fprintf(os.Stderr, "%s.avg.rate.1min: %f\n", metric, value.Rate1())
 	}
 }
 

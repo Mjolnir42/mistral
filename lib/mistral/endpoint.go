@@ -17,11 +17,18 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/legacy"
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 // Endpoint is the HTTP API endpoint for Mistral
 func Endpoint(w http.ResponseWriter, r *http.Request,
 	params httprouter.Params) {
+
+	// count all requests, declined or accepted
+	if MtrReg != nil {
+		mtr := metrics.GetOrRegisterMeter(`/requests`, *MtrReg)
+		mtr.Mark(1)
+	}
 
 	// no new requests are served if the service is
 	// considered unavailable
