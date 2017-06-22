@@ -77,7 +77,14 @@ func main() {
 	handlerDeath := make(chan error)
 
 	// setup metrics
-	pfxRegistry := metrics.NewPrefixedRegistry(`/mistral`)
+	var metricPrefix string
+	switch miConf.Misc.InstanceName {
+	case ``:
+		metricPrefix = `/mistral`
+	default:
+		metricPrefix = fmt.Sprintf("/mistral/%s", miConf.Misc.InstanceName)
+	}
+	pfxRegistry := metrics.NewPrefixedRegistry(metricPrefix)
 	metrics.NewRegisteredMeter(`/messages`, pfxRegistry)
 	mistral.MtrReg = &pfxRegistry
 
