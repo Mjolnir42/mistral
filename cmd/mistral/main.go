@@ -85,6 +85,7 @@ func main() {
 		metricPrefix = fmt.Sprintf("/mistral/%s", miConf.Misc.InstanceName)
 	}
 	pfxRegistry := metrics.NewPrefixedRegistry(metricPrefix)
+	metrics.NewRegisteredMeter(`/requests`, pfxRegistry)
 	metrics.NewRegisteredMeter(`/messages`, pfxRegistry)
 	mistral.MtrReg = &pfxRegistry
 
