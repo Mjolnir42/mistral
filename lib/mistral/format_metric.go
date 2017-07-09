@@ -7,6 +7,7 @@
  */
 
 package mistral // import "github.com/mjolnir42/mistral/lib/mistral"
+
 import (
 	"fmt"
 
