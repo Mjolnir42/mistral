@@ -58,6 +58,7 @@ func NewFetchingMetricSocket(conf *erebos.Config, reg *metrics.Registry,
 		fetch:    fetch,
 	}
 	s.Errors = make(chan error)
+	s.Shutdown = make(chan struct{})
 	return &s
 }
 
@@ -77,6 +78,7 @@ func NewMetricSocket(conf *erebos.Config, reg *metrics.Registry,
 		format:   format,
 	}
 	s.Errors = make(chan error)
+	s.Shutdown = make(chan struct{})
 	return &s
 }
 

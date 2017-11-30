@@ -52,6 +52,9 @@ func (m *Mistral) Start() {
 	}
 
 	config := sarama.NewConfig()
+	// required for sync producers
+	config.Producer.Return.Successes = true
+	config.Producer.Return.Errors = true
 	// set producer transport keepalive
 	switch m.Config.Kafka.Keepalive {
 	case 0:
