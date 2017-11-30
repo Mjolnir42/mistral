@@ -1,0 +1,46 @@
+# mistral metric api example configuration
+#
+# Log settings
+log: {
+  path: /srv/mistral/instance/log
+  file: mistral.log
+  # reopen logfile on signal USR2
+  rotate.on.usr2: true
+}
+
+# Zookeeper settings
+zookeeper: {
+  # publish offset updates every commit.ms
+  commit.ms: 2000
+  connect.string: 'zk-server01:2181,zk-server02:2181/chroot/kafka'
+  reset.offset.on.startup: false
+}
+
+# Kafka settings
+kafka: {
+  producer.topic: mistral
+  producer.response.strategy: WaitForLocal
+  producer.retry.attempts: 4
+  keepalive.ms: 4200
+}
+
+# Legacy settings
+legacy: {
+  # path for the metrics socket
+  socket.path: /run/mistral.seqpacket
+}
+
+# misc settings
+misc: {
+  produce.metrics: true
+  # will be included in metric names if set
+  instance.name: foo
+}
+
+# mistral application settings
+mistral: {
+  handler.queue.length: 16
+  listen.address: 0.0.0.0
+  listen.port: 7400
+  api.endpoint.path: /api/metrics
+}
