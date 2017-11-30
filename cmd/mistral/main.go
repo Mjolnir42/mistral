@@ -105,6 +105,7 @@ func main() {
 	mistral.MtrReg = &pfxRegistry
 
 	ms := legacy.NewMetricSocket(&miConf, &pfxRegistry, handlerDeath, mistral.FormatMetrics)
+	ms.SetDebugFormatter(mistral.DebugFormatMetrics)
 	if miConf.Misc.ProduceMetrics {
 		logrus.Info(`Launched metrics producer socket`)
 		go ms.Run()
