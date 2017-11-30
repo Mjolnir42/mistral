@@ -30,6 +30,8 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 )
 
+var githash, shorthash, builddate, buildtime string
+
 func init() {
 	// Discard logspam from Zookeeper library
 	erebos.DisableZKLogger()
@@ -40,10 +42,23 @@ func init() {
 
 func main() {
 	// parse command line flags
-	var cliConfPath string
+	var (
+		cliConfPath string
+		versionFlag bool
+	)
 	flag.StringVar(&cliConfPath, `config`, `mistral.conf`,
 		`Configuration file location`)
+	flag.BoolVar(&versionFlag, `version`, false, `Print version information`)
 	flag.Parse()
+
+	// only provide version information if --version was specified
+	if versionFlag {
+		fmt.Fprintln(os.Stderr, `Mistral Metric API`)
+		fmt.Fprintf(os.Stderr, "Version  : %s-%s\n", builddate, shorthash)
+		fmt.Fprintf(os.Stderr, "Git Hash : %s\n", githash)
+		fmt.Fprintf(os.Stderr, "Timestamp: %s\n", buildtime)
+		os.Exit(0)
+	}
 
 	// read runtime configuration
 	miConf := erebos.Config{}
