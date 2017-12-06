@@ -52,8 +52,10 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	buf, _ := ioutil.ReadAll(r.Body)
 
 	// verify the received data can be parsed
-	if err := json.Unmarshal(buf, &legacy.MetricBatch{}); err != nil {
-		logrus.Warningf("Rejected unprocessable data from %s: %s",
+	var batch *legacy.MetricBatch
+	if err := json.Unmarshal(buf, batch); err != nil {
+		logrus.Warningf(
+			"json.Unmarshal: rejected unprocessable data from %s: %s",
 			r.RemoteAddr, err.Error())
 
 		http.Error(w,
@@ -64,17 +66,8 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	}
 
 	// get the hostID from the received data
-	hostID, err := legacy.PeekHostID(buf)
-	if err != nil {
-		logrus.Warningf("Could not get HostID in data from %s: %s",
-			r.RemoteAddr, err.Error())
-
-		http.Error(w,
-			err.Error(),
-			http.StatusUnprocessableEntity,
-		)
-		return
-	} else if hostID == 0 {
+	hostID := batch.HostID
+	if hostID == 0 {
 		logrus.Warningf("Rejected invalid HostID 0 from %s",
 			r.RemoteAddr)
 
@@ -84,12 +77,32 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		)
 		return
 	}
+
+	// encode back to JSON, this Unmarshal/Marshal step fixes and
+	// converts some broken metrics
+	var err error
+	var fixed []byte
+	if fixed, err = json.Marshal(batch); err != nil {
+		logrus.Errorf(
+			"json.Marshal: rejected unprocessable data from %s: %s",
+			r.RemoteAddr, err.Error())
+
+		http.Error(w,
+			err.Error(),
+			http.StatusUnprocessableEntity,
+		)
+		return
+	}
+
+	// send data to application handler for kafka production
 	ret := make(chan error)
 	Dispatch(erebos.Transport{
 		HostID: hostID,
-		Value:  buf,
+		Value:  fixed,
 		Return: ret,
 	})
+
+	// wait for kafka result
 	res := <-ret
 	if res != nil {
 		logrus.Errorf(
@@ -101,8 +114,8 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 		unavailable = true
 
 		http.Error(w,
-			http.StatusText(http.StatusServiceUnavailable),
-			http.StatusServiceUnavailable,
+			http.StatusText(http.StatusBadGateway),
+			http.StatusBadGateway,
 		)
 		return
 	}
