@@ -25,6 +25,9 @@ var MtrReg *metrics.Registry
 // unavailable indicates that producing to Kafka returned errors
 var unavailable bool
 
+// shutdown indicates that a shutdown has been requested
+var shutdown bool
+
 func init() {
 	Handlers = make(map[int]erebos.Handler)
 }
@@ -43,6 +46,11 @@ type Mistral struct {
 // SetUnavailable switches the private package variable to true
 func SetUnavailable() {
 	unavailable = true
+}
+
+// SetShutdown switches the private package variable to true
+func SetShutdown() {
+	shutdown = true
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix

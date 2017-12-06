@@ -153,6 +153,7 @@ func main() {
 
 	// the main loop
 	fault := false
+	shutdown := false
 runloop:
 	for {
 		select {
@@ -160,17 +161,27 @@ runloop:
 			logrus.Errorf("Socket error: %s", err.Error())
 		case <-c:
 			logrus.Infoln(`Received shutdown signal`)
+			// switch the application to shutdown which will cause
+			// healthchecks to fail.
+			mistral.SetShutdown()
+			shutdown = true
 			break runloop
 		case err := <-handlerDeath:
 			logrus.Errorf("Handler died: %s", err.Error())
+			// switch the application to unavailable which will cause
+			// healthchecks to fail. The shutdown race against the watchdog
+			// begins. All new http connections will now also fail.
+			mistral.SetUnavailable()
 			fault = true
 			break runloop
 		}
 	}
-	// switch the application to unavailable which will cause
-	// healthchecks to fail. The shutdown race against the watchdog
-	// begins. All new http connections will now also fail.
-	mistral.SetUnavailable()
+
+	if shutdown {
+		// give the loadbalancer time to pick up the failing health
+		// check and remove this instance from service
+		<-time.After(time.Second * 95)
+	}
 
 	// close all handlers
 	close(ms.Shutdown)

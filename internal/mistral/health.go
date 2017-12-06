@@ -27,7 +27,7 @@ func Health(w http.ResponseWriter, r *http.Request,
 		mtr.Mark(1)
 	}
 
-	if unavailable {
+	if unavailable || shutdown {
 
 		http.Error(w,
 			http.StatusText(http.StatusServiceUnavailable),
