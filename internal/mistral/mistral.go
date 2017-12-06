@@ -39,8 +39,10 @@ type Mistral struct {
 	Shutdown chan struct{}
 	Death    chan error
 	Config   *erebos.Config
-	producer sarama.SyncProducer
 	Metrics  *metrics.Registry
+	trackID  map[string]*erebos.Transport
+	dispatch chan<- *sarama.ProducerMessage
+	producer sarama.AsyncProducer
 }
 
 // SetUnavailable switches the private package variable to true
@@ -51,6 +53,23 @@ func SetUnavailable() {
 // SetShutdown switches the private package variable to true
 func SetShutdown() {
 	shutdown = true
+}
+
+// ackClientRequest updates the API client with the result of
+// the producer request
+func (m *Mistral) ackClientRequest(trackingID string, err error) {
+	if _, ok := m.trackID[trackingID]; !ok {
+		logrus.Warnf("Unknown trackingID: %s", trackingID)
+		return
+	}
+
+	// ack client request
+	go func(msg *erebos.Transport, err error) {
+		msg.Return <- err
+	}(m.trackID[trackingID], err)
+
+	// cleanup request tracking
+	delete(m.trackID, trackingID)
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix

@@ -13,18 +13,24 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/mjolnir42/erebos"
+	uuid "github.com/satori/go.uuid"
 )
 
 // process sends the received message to Kafka
 func (m *Mistral) process(msg *erebos.Transport) {
-	_, _, err := m.producer.SendMessage(&sarama.ProducerMessage{
-		Topic: m.Config.Kafka.ProducerTopic,
-		Key: sarama.StringEncoder(
-			strconv.Itoa(int(msg.HostID)),
-		),
-		Value: sarama.ByteEncoder(msg.Value),
-	})
-	msg.Return <- err
+	trackingID := uuid.NewV4().String()
+
+	go func(hostID int, trackID string, data []byte) {
+		m.dispatch <- &sarama.ProducerMessage{
+			Topic: m.Config.Kafka.ProducerTopic,
+			Key: sarama.StringEncoder(
+				strconv.Itoa(hostID),
+			),
+			Value:    sarama.ByteEncoder(data),
+			Metadata: trackID,
+		}
+	}(int(msg.HostID), trackingID, msg.Value)
+	m.trackID[trackingID] = msg
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
