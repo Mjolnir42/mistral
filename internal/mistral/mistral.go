@@ -10,6 +10,7 @@ package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
 	metrics "github.com/rcrowley/go-metrics"
 )
@@ -40,6 +41,7 @@ type Mistral struct {
 	Death    chan error
 	Config   *erebos.Config
 	Metrics  *metrics.Registry
+	delay    *delay.Delay
 	trackID  map[string]*erebos.Transport
 	dispatch chan<- *sarama.ProducerMessage
 	producer sarama.AsyncProducer
@@ -64,8 +66,10 @@ func (m *Mistral) ackClientRequest(trackingID string, err error) {
 	}
 
 	// ack client request
+	m.delay.Use()
 	go func(msg *erebos.Transport, err error) {
 		msg.Return <- err
+		m.delay.Done()
 	}(m.trackID[trackingID], err)
 
 	// cleanup request tracking

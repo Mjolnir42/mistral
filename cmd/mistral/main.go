@@ -24,6 +24,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/client9/reopen"
 	"github.com/julienschmidt/httprouter"
+	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/legacy"
 	"github.com/mjolnir42/mistral/internal/mistral"
@@ -91,6 +92,9 @@ func main() {
 	// this channel is used by the handlers on error
 	handlerDeath := make(chan error)
 
+	// setup goroutine waiting policy
+	waitdelay := delay.NewDelay()
+
 	// setup metrics
 	var metricPrefix string
 	switch miConf.Misc.InstanceName {
@@ -108,7 +112,11 @@ func main() {
 	ms.SetDebugFormatter(mistral.DebugFormatMetrics)
 	if miConf.Misc.ProduceMetrics {
 		logrus.Info(`Launched metrics producer socket`)
-		go ms.Run()
+		waitdelay.Use()
+		go func() {
+			defer waitdelay.Done()
+			ms.Run()
+		}()
 	}
 
 	// start application handlers
@@ -123,7 +131,11 @@ func main() {
 			Metrics:  &pfxRegistry,
 		}
 		mistral.Handlers[i] = &h
-		go h.Start()
+		waitdelay.Use()
+		go func() {
+			defer waitdelay.Done()
+			h.Start()
+		}()
 		logrus.Infof("Launched Mistral handler #%d", i)
 	}
 
@@ -145,10 +157,12 @@ func main() {
 		Addr:    listenURL.Host,
 		Handler: router,
 	}
+	waitdelay.Use()
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			handlerDeath <- err
 		}
+		waitdelay.Done()
 	}()
 
 	// the main loop
@@ -205,7 +219,7 @@ drainloop:
 
 	// give goroutines that were blocked on handlerDeath channel
 	// a chance to exit
-	<-time.After(time.Millisecond * 10)
+	waitdelay.Wait()
 
 	// stop http server
 	ctx, cancel := context.WithTimeout(

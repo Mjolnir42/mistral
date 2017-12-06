@@ -20,6 +20,7 @@ import (
 func (m *Mistral) process(msg *erebos.Transport) {
 	trackingID := uuid.NewV4().String()
 
+	m.delay.Use()
 	go func(hostID int, trackID string, data []byte) {
 		m.dispatch <- &sarama.ProducerMessage{
 			Topic: m.Config.Kafka.ProducerTopic,
@@ -29,6 +30,7 @@ func (m *Mistral) process(msg *erebos.Transport) {
 			Value:    sarama.ByteEncoder(data),
 			Metadata: trackID,
 		}
+		m.delay.Done()
 	}(int(msg.HostID), trackingID, msg.Value)
 	m.trackID[trackingID] = msg
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
 	kazoo "github.com/wvanbergen/kazoo-go"
 )
@@ -94,6 +95,7 @@ func (m *Mistral) Start() {
 		return
 	}
 	m.dispatch = m.producer.Input()
+	m.delay = delay.NewDelay()
 
 	m.run()
 }
