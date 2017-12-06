@@ -110,9 +110,6 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 			hostID, r.RemoteAddr, res.Error(),
 		)
 
-		// set the package variable unavailable to fail /health
-		unavailable = true
-
 		http.Error(w,
 			http.StatusText(http.StatusBadGateway),
 			http.StatusBadGateway,
