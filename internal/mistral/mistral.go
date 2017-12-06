@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file.
  */
 
-package mistral // import "github.com/mjolnir42/mistral/lib/mistral"
+package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
 
 import (
 	"github.com/Shopify/sarama"

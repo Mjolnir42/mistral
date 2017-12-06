@@ -26,7 +26,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/legacy"
-	"github.com/mjolnir42/mistral/lib/mistral"
+	"github.com/mjolnir42/mistral/internal/mistral"
 	metrics "github.com/rcrowley/go-metrics"
 )
 
