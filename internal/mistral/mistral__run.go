@@ -39,10 +39,23 @@ runloop:
 			m.ackClientRequest(trackingID, err)
 			mtr.Mark(1)
 			logrus.Errorf("Producer error: %s", err.Error())
+			// increase error counter
+			m.lastErr++
+			if m.lastErr >= 10 {
+				// shutdown on 10+ producer errors in a row
+				m.Death <- fmt.Errorf(
+					"Mistral[%d]: %d consecutive producer errors",
+					m.Num, m.lastErr,
+				)
+				<-m.Shutdown
+				break runloop
+			}
 		case msg := <-m.producer.Successes():
 			trackingID := msg.Metadata.(string)
 			m.ackClientRequest(trackingID, nil)
 			mtr.Mark(1)
+			// reset error counter on success
+			m.lastErr = 0
 		case msg := <-m.Input:
 			if msg == nil {
 				// read from closed Input channel before closed

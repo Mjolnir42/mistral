@@ -46,6 +46,7 @@ type Mistral struct {
 	trackID  map[string]*erebos.Transport
 	dispatch chan<- *sarama.ProducerMessage
 	producer sarama.AsyncProducer
+	lastErr  int
 }
 
 // SetUnavailable switches the private package variable to true
