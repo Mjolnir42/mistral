@@ -17,7 +17,10 @@ import (
 
 // run is the event loop for Mistral
 func (m *Mistral) run() {
-	mtr := metrics.GetOrRegisterMeter(`/messages`, *m.Metrics)
+	mtr := metrics.GetOrRegisterMeter(
+		`/messages`,
+		*m.Metrics,
+	)
 
 	// required during shutdown
 	inputEmpty := false

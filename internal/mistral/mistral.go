@@ -10,6 +10,7 @@ package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/Sirupsen/logrus"
 	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
 	metrics "github.com/rcrowley/go-metrics"

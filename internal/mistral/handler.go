@@ -58,7 +58,9 @@ func (m *Mistral) Start() {
 	case 0:
 		config.Net.KeepAlive = 3 * time.Second
 	default:
-		config.Net.KeepAlive = time.Duration(m.Config.Kafka.Keepalive) * time.Millisecond
+		config.Net.KeepAlive = time.Duration(
+			m.Config.Kafka.Keepalive,
+		) * time.Millisecond
 	}
 	// set our required persistence confidence for producing
 	switch m.Config.Kafka.ProducerResponseStrategy {

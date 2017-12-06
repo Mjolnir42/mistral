@@ -49,40 +49,42 @@ func main() {
 	)
 	flag.StringVar(&cliConfPath, `config`, `mistral.conf`,
 		`Configuration file location`)
-	flag.BoolVar(&versionFlag, `version`, false, `Print version information`)
+	flag.BoolVar(&versionFlag, `version`, false,
+		`Print version information`)
 	flag.Parse()
 
 	// only provide version information if --version was specified
 	if versionFlag {
 		fmt.Fprintln(os.Stderr, `Mistral Metric API`)
-		fmt.Fprintf(os.Stderr, "Version  : %s-%s\n", builddate, shorthash)
+		fmt.Fprintf(os.Stderr, "Version  : %s-%s\n", builddate,
+			shorthash)
 		fmt.Fprintf(os.Stderr, "Git Hash : %s\n", githash)
 		fmt.Fprintf(os.Stderr, "Timestamp: %s\n", buildtime)
 		os.Exit(0)
 	}
 
 	// read runtime configuration
-	miConf := erebos.Config{}
-	if err := miConf.FromFile(cliConfPath); err != nil {
+	conf := erebos.Config{}
+	if err := conf.FromFile(cliConfPath); err != nil {
 		logrus.Fatalf("Could not open configuration: %s", err)
 	}
 
 	// setup logfile
 	if lfh, err := reopen.NewFileWriter(
-		filepath.Join(miConf.Log.Path, miConf.Log.File),
+		filepath.Join(conf.Log.Path, conf.Log.File),
 	); err != nil {
 		logrus.Fatalf("Unable to open logfile: %s", err)
 	} else {
-		miConf.Log.FH = lfh
+		conf.Log.FH = lfh
 	}
-	logrus.SetOutput(miConf.Log.FH)
+	logrus.SetOutput(conf.Log.FH)
 	logrus.Infoln(`Starting MISTRAL...`)
 
 	// signal handler will reopen logfile on USR2 if requested
-	if miConf.Log.Rotate {
+	if conf.Log.Rotate {
 		sigChanLogRotate := make(chan os.Signal, 1)
 		signal.Notify(sigChanLogRotate, syscall.SIGUSR2)
-		go erebos.Logrotate(sigChanLogRotate, miConf)
+		go erebos.Logrotate(sigChanLogRotate, conf)
 	}
 
 	// setup signal receiver for graceful shutdown
@@ -97,20 +99,22 @@ func main() {
 
 	// setup metrics
 	var metricPrefix string
-	switch miConf.Misc.InstanceName {
+	switch conf.Misc.InstanceName {
 	case ``:
 		metricPrefix = `/mistral`
 	default:
-		metricPrefix = fmt.Sprintf("/mistral/%s", miConf.Misc.InstanceName)
+		metricPrefix = fmt.Sprintf("/mistral/%s",
+			conf.Misc.InstanceName)
 	}
 	pfxRegistry := metrics.NewPrefixedRegistry(metricPrefix)
 	metrics.NewRegisteredMeter(`/requests`, pfxRegistry)
 	metrics.NewRegisteredMeter(`/messages`, pfxRegistry)
 	mistral.MtrReg = &pfxRegistry
 
-	ms := legacy.NewMetricSocket(&miConf, &pfxRegistry, handlerDeath, mistral.FormatMetrics)
+	ms := legacy.NewMetricSocket(&conf, &pfxRegistry, handlerDeath,
+		mistral.FormatMetrics)
 	ms.SetDebugFormatter(mistral.DebugFormatMetrics)
-	if miConf.Misc.ProduceMetrics {
+	if conf.Misc.ProduceMetrics {
 		logrus.Info(`Launched metrics producer socket`)
 		waitdelay.Use()
 		go func() {
@@ -124,10 +128,10 @@ func main() {
 		h := mistral.Mistral{
 			Num: i,
 			Input: make(chan *erebos.Transport,
-				miConf.Mistral.HandlerQueueLength),
+				conf.Mistral.HandlerQueueLength),
 			Shutdown: make(chan struct{}),
 			Death:    handlerDeath,
-			Config:   &miConf,
+			Config:   &conf,
 			Metrics:  &pfxRegistry,
 		}
 		mistral.Handlers[i] = &h
@@ -143,13 +147,13 @@ func main() {
 	listenURL := &url.URL{}
 	listenURL.Scheme = `http`
 	listenURL.Host = fmt.Sprintf("%s:%s",
-		miConf.Mistral.ListenAddress,
-		miConf.Mistral.ListenPort,
+		conf.Mistral.ListenAddress,
+		conf.Mistral.ListenPort,
 	)
 
 	// setup http routes
 	router := httprouter.New()
-	router.POST(miConf.Mistral.EndpointPath, mistral.Endpoint)
+	router.POST(conf.Mistral.EndpointPath, mistral.Endpoint)
 	router.GET(`/health`, mistral.Health)
 
 	// start HTTPserver
@@ -183,8 +187,9 @@ runloop:
 		case err := <-handlerDeath:
 			logrus.Errorf("Handler died: %s", err.Error())
 			// switch the application to unavailable which will cause
-			// healthchecks to fail. The shutdown race against the watchdog
-			// begins. All new http connections will now also fail.
+			// healthchecks to fail. The shutdown race against the
+			// watchdog begins.
+			// All new http connections will now also fail.
 			mistral.SetUnavailable()
 			fault = true
 			break runloop
