@@ -163,10 +163,10 @@ func main() {
 	}
 	waitdelay.Use()
 	go func() {
+		defer waitdelay.Done()
 		if err := srv.ListenAndServe(); err != nil {
 			handlerDeath <- err
 		}
-		waitdelay.Done()
 	}()
 
 	// the main loop
@@ -195,8 +195,10 @@ runloop:
 			break runloop
 		}
 	}
+	logrus.Infoln(`main.runloop exited, shutdown sequence running`)
 
 	if shutdown {
+		logrus.Infoln(`Graceful shutdown waiting 60 seconds with failed health check`)
 		// give the loadbalancer time to pick up the failing health
 		// check and remove this instance from service
 		<-time.After(time.Second * 95)
@@ -208,6 +210,7 @@ runloop:
 		close(mistral.Handlers[i].ShutdownChannel())
 		close(mistral.Handlers[i].InputChannel())
 	}
+	logrus.Info(`Handler channels closed`)
 
 	// stop http server
 	ctx, cancel := context.WithTimeout(
@@ -230,9 +233,11 @@ drainloop:
 			break drainloop
 		}
 	}
+	logrus.Infoln(`Drained all channels`)
 
 	// give goroutines that were blocked on handlerDeath channel
 	// a chance to exit
+	logrus.Infoln(`Waiting for go-routines to exit`)
 	waitdelay.Wait()
 
 	logrus.Infoln(`MISTRAL shutdown complete`)
