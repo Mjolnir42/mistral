@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file.
  */
 
-package mistral // import "github.com/mjolnir42/mistral/lib/mistral"
+package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
 
 import (
 	"net/http"
@@ -27,7 +27,7 @@ func Health(w http.ResponseWriter, r *http.Request,
 		mtr.Mark(1)
 	}
 
-	if unavailable {
+	if unavailable || shutdown {
 
 		http.Error(w,
 			http.StatusText(http.StatusServiceUnavailable),

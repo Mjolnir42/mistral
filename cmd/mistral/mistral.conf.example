@@ -28,6 +28,10 @@ kafka: {
 legacy: {
   # path for the metrics socket
   socket.path: /run/mistral.seqpacket
+  # print metrics on STDERR
+  metrics.debug.stderr: false
+  # print metrics every n seconds
+  metrics.debug.frequency.seconds: 30
 }
 
 # misc settings

@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file.
  */
 
-package mistral // import "github.com/mjolnir42/mistral/lib/mistral"
+package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
 	kazoo "github.com/wvanbergen/kazoo-go"
 )
@@ -52,15 +53,14 @@ func (m *Mistral) Start() {
 	}
 
 	config := sarama.NewConfig()
-	// required for sync producers
-	config.Producer.Return.Successes = true
-	config.Producer.Return.Errors = true
 	// set producer transport keepalive
 	switch m.Config.Kafka.Keepalive {
 	case 0:
 		config.Net.KeepAlive = 3 * time.Second
 	default:
-		config.Net.KeepAlive = time.Duration(m.Config.Kafka.Keepalive) * time.Millisecond
+		config.Net.KeepAlive = time.Duration(
+			m.Config.Kafka.Keepalive,
+		) * time.Millisecond
 	}
 	// set our required persistence confidence for producing
 	switch m.Config.Kafka.ProducerResponseStrategy {
@@ -73,6 +73,11 @@ func (m *Mistral) Start() {
 	default:
 		config.Producer.RequiredAcks = sarama.WaitForLocal
 	}
+
+	// set return parameters
+	config.Producer.Return.Successes = true
+	config.Producer.Return.Errors = true
+
 	// set how often to retry producing
 	switch m.Config.Kafka.ProducerRetry {
 	case 0:
@@ -83,12 +88,17 @@ func (m *Mistral) Start() {
 	config.Producer.Partitioner = sarama.NewHashPartitioner
 	config.ClientID = fmt.Sprintf("mistral.%s", host)
 
-	m.producer, err = sarama.NewSyncProducer(brokers, config)
+	m.trackID = make(map[string]*erebos.Transport)
+
+	m.producer, err = sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
 		m.Death <- err
 		<-m.Shutdown
 		return
 	}
+	m.dispatch = m.producer.Input()
+	m.delay = delay.New()
+
 	m.run()
 }
 
