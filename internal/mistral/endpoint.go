@@ -52,7 +52,7 @@ func Endpoint(w http.ResponseWriter, r *http.Request,
 	buf, _ := ioutil.ReadAll(r.Body)
 
 	// verify the received data can be parsed
-	var batch *legacy.MetricBatch
+	batch := &legacy.MetricBatch{}
 	if err := json.Unmarshal(buf, batch); err != nil {
 		logrus.Warningf(
 			"json.Unmarshal: rejected unprocessable data from %s: %s",
