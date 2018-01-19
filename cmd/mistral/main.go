@@ -95,7 +95,7 @@ func main() {
 	handlerDeath := make(chan error)
 
 	// setup goroutine waiting policy
-	waitdelay := delay.NewDelay()
+	waitdelay := delay.New()
 
 	// setup metrics
 	var metricPrefix string

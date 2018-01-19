@@ -97,7 +97,7 @@ func (m *Mistral) Start() {
 		return
 	}
 	m.dispatch = m.producer.Input()
-	m.delay = delay.NewDelay()
+	m.delay = delay.New()
 
 	m.run()
 }
