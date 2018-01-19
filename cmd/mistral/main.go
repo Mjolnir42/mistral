@@ -209,6 +209,15 @@ runloop:
 		close(mistral.Handlers[i].InputChannel())
 	}
 
+	// stop http server
+	ctx, cancel := context.WithTimeout(
+		context.Background(), 5*time.Second)
+	defer cancel()
+	logrus.Info(`Stopping HTTP server`)
+	if err := srv.Shutdown(ctx); err != nil {
+		logrus.Warnf("HTTP shutdown error: %s", err.Error())
+	}
+
 	// read all additional handler errors if required
 drainloop:
 	for {
@@ -226,13 +235,6 @@ drainloop:
 	// a chance to exit
 	waitdelay.Wait()
 
-	// stop http server
-	ctx, cancel := context.WithTimeout(
-		context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		logrus.Warnf("HTTP shutdown error: %s", err.Error())
-	}
 	logrus.Infoln(`MISTRAL shutdown complete`)
 	if fault {
 		os.Exit(1)
