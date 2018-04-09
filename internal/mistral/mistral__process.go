@@ -18,7 +18,7 @@ import (
 
 // process sends the received message to Kafka
 func (m *Mistral) process(msg *erebos.Transport) {
-	trackingID := uuid.NewV4().String()
+	trackingID := uuid.Must(uuid.NewV4()).String()
 
 	m.delay.Use()
 	go func(hostID int, trackID string, data []byte) {
