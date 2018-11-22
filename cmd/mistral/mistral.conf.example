@@ -48,6 +48,13 @@ mistral: {
   listen.port: 7400
   listen.scheme: https
   api.endpoint.path: /api/metrics
+  authentication.style: static_basic_auth
+}
+
+# static basic auth settings
+basicauth: {
+	username: foouser
+	password: sikrit
 }
 
 # tls settings for listen.protocol https

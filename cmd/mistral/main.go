@@ -35,6 +35,7 @@ import (
 )
 
 var githash, shorthash, builddate, buildtime string
+var basicAuthUsername, basicAuthPassword string
 
 func init() {
 	// Discard logspam from Zookeeper library
@@ -161,8 +162,17 @@ func main() {
 
 	// setup http routes
 	router := httprouter.New()
-	router.POST(conf.Mistral.EndpointPath, mistral.Endpoint)
 	router.GET(`/health`, mistral.Health)
+
+	// check if authentication is required
+	switch conf.Mistral.Authentication {
+	case `static_basic_auth`:
+		basicAuthUsername = conf.BasicAuth.Username
+		basicAuthPassword = conf.BasicAuth.Password
+		router.POST(conf.Mistral.EndpointPath, BasicAuth(mistral.Endpoint))
+	default:
+		router.POST(conf.Mistral.EndpointPath, mistral.Endpoint)
+	}
 
 	// setup HTTPserver
 	srv := &http.Server{
