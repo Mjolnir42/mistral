@@ -10,8 +10,11 @@ package main // import "github.com/mjolnir42/mistral/cmd/mistral"
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -145,7 +148,12 @@ func main() {
 
 	// assemble listen address
 	listenURL := &url.URL{}
-	listenURL.Scheme = `http`
+	switch conf.Mistral.ListenScheme {
+	case ``:
+		listenURL.Scheme = `http`
+	default:
+		listenURL.Scheme = conf.Mistral.ListenScheme
+	}
 	listenURL.Host = fmt.Sprintf("%s:%s",
 		conf.Mistral.ListenAddress,
 		conf.Mistral.ListenPort,
@@ -156,15 +164,96 @@ func main() {
 	router.POST(conf.Mistral.EndpointPath, mistral.Endpoint)
 	router.GET(`/health`, mistral.Health)
 
-	// start HTTPserver
+	// setup HTTPserver
 	srv := &http.Server{
 		Addr:    listenURL.Host,
 		Handler: router,
 	}
+
+	// setup TLS configuration if required
+	if listenURL.Scheme == `https` {
+		srv.TLSConfig = &tls.Config{
+			PreferServerCipherSuites: true,
+		}
+
+		// allow to lower the minimum TLS protocol version
+		switch conf.TLS.MinVersion {
+		case `TLS1.0`:
+			srv.TLSConfig.MinVersion = tls.VersionTLS10
+		case `TLS1.1`:
+			srv.TLSConfig.MinVersion = tls.VersionTLS11
+		case `TLS1.2`:
+			srv.TLSConfig.MinVersion = tls.VersionTLS12
+		default:
+			srv.TLSConfig.MinVersion = tls.VersionTLS12
+		}
+
+		// allow to lower the maximum TLS protocol version
+		switch conf.TLS.MaxVersion {
+		case `TLS1.0`:
+			srv.TLSConfig.MaxVersion = tls.VersionTLS10
+		case `TLS1.1`:
+			srv.TLSConfig.MaxVersion = tls.VersionTLS11
+		case `TLS1.2`:
+			srv.TLSConfig.MaxVersion = tls.VersionTLS12
+		default:
+		}
+
+		// allow to limit offered cipher suites
+		switch conf.TLS.Ciphers {
+		case `strict`:
+			srv.TLSConfig.CipherSuites = []uint16{
+				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			}
+		}
+
+		// load configured certificates
+		srv.TLSConfig.Certificates = make([]tls.Certificate, 0, len(conf.TLS.CertificateChains))
+		for i := range conf.TLS.CertificateChains {
+			cert, err := tls.LoadX509KeyPair(
+				conf.TLS.CertificateChains[i].ChainFile,
+				conf.TLS.CertificateChains[i].KeyFile,
+			)
+			if err != nil {
+				logrus.Fatalf("Failed to load TLS certificate: %s", err)
+			}
+			srv.TLSConfig.Certificates = append(
+				srv.TLSConfig.Certificates,
+				cert,
+			)
+		}
+		srv.TLSConfig.BuildNameToCertificate()
+
+		// load configured root CAs
+		srv.TLSConfig.RootCAs = x509.NewCertPool()
+		for i := range conf.TLS.RootCAs {
+			rootPEM, err := ioutil.ReadFile(conf.TLS.RootCAs[i])
+			if err != nil {
+				logrus.Fatalf("Failed to read RootCA from file: %s, %s",
+					conf.TLS.RootCAs[i], err,
+				)
+			}
+			if !srv.TLSConfig.RootCAs.AppendCertsFromPEM(rootPEM) {
+				logrus.Fatalf("Failed to load RootCA from %s", conf.TLS.RootCAs[i])
+			}
+		}
+	}
+
+	// start http || https server
 	waitdelay.Use()
 	go func() {
 		defer waitdelay.Done()
-		if err := srv.ListenAndServe(); err != nil {
+		var err error
+		switch listenURL.Scheme {
+		case `http`:
+			err = srv.ListenAndServe()
+		case `https`:
+			// certificates are already configured in srv.TLSConfig
+			err = srv.ListenAndServeTLS(``, ``)
+		}
+		if err != nil {
 			handlerDeath <- err
 		}
 	}()

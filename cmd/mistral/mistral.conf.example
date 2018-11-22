@@ -46,5 +46,32 @@ mistral: {
   handler.queue.length: 16
   listen.address: 0.0.0.0
   listen.port: 7400
+  listen.scheme: https
   api.endpoint.path: /api/metrics
+}
+
+# tls settings for listen.protocol https
+tls: {
+	# multiple certificate chains may be specified
+  certificate.chains: [
+		{ certificate.chain.file: '/tmp/cert01.pem'
+			certificate.key.file: '/tmp/cert01.key'
+		},
+  ]
+  # minimum accepted TLS protocol version:
+  # - TLS1.0
+  # - TLS1.1
+  # - TLS1.2 (default)
+	min.version: TLS1.2
+  # maximum accepted TLS protocol version:
+  # - TLS1.0
+  # - TLS1.1
+  # - TLS1.2
+  # - highest (default)
+  max.version: highest
+  # setting this key to strict limits the offered ciphersuites to
+  # - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+  # - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+  # - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+  cipher.style: strict
 }
