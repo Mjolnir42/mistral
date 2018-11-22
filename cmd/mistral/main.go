@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file.
  */
 
-package main // import "github.com/mjolnir42/mistral/cmd/mistral"
+package main // import "github.com/solnx/mistral/cmd/mistral"
 
 import (
 	"context"
@@ -29,8 +29,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
-	"github.com/mjolnir42/legacy"
-	"github.com/mjolnir42/mistral/internal/mistral"
+	"github.com/solnx/legacy"
+	"github.com/solnx/mistral/internal/mistral"
 	metrics "github.com/rcrowley/go-metrics"
 )
 

@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file.
  */
 
-package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
+package mistral // import "github.com/solnx/mistral/internal/mistral"
 
 import (
 	"time"

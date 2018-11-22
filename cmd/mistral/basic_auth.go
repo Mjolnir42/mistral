@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package main // import "github.com/mjolnir42/mistral/cmd/mistral"
+package main // import "github.com/solnx/mistral/cmd/mistral"
 
 // This function is part of the README examples of julienschmidt/httprouter
 

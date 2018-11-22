@@ -6,13 +6,13 @@
  * that can be found in the LICENSE file.
  */
 
-package mistral // import "github.com/mjolnir42/mistral/internal/mistral"
+package mistral // import "github.com/solnx/mistral/internal/mistral"
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/mjolnir42/legacy"
+	"github.com/solnx/legacy"
 	metrics "github.com/rcrowley/go-metrics"
 )
 
