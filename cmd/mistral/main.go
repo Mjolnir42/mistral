@@ -29,9 +29,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/mjolnir42/delay"
 	"github.com/mjolnir42/erebos"
+	metrics "github.com/rcrowley/go-metrics"
 	"github.com/solnx/legacy"
 	"github.com/solnx/mistral/internal/mistral"
-	metrics "github.com/rcrowley/go-metrics"
 )
 
 var githash, shorthash, builddate, buildtime string
