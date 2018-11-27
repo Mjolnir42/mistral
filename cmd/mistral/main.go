@@ -291,13 +291,17 @@ runloop:
 			// All new http connections will now also fail.
 			mistral.SetUnavailable()
 			fault = true
+			// drain startupDelay timer if applicable
+			if !startupDelay.Stop() {
+				<-startupDelay.C
+			}
 			break runloop
 		}
 	}
 	logrus.Infoln(`main.runloop exited, shutdown sequence running`)
 
 	if shutdown {
-		logrus.Infoln(`Graceful shutdown waiting 60 seconds with failed health check`)
+		logrus.Infoln(`Graceful shutdown waiting 95 seconds with failed health check`)
 		// give the loadbalancer time to pick up the failing health
 		// check and remove this instance from service
 		<-time.After(time.Second * 95)
