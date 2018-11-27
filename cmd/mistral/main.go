@@ -273,9 +273,14 @@ func main() {
 	// the main loop
 	fault := false
 	shutdown := false
+	startupDelay := time.NewTimer(time.Second)
 runloop:
 	for {
 		select {
+		case <-startupDelay.C:
+			// no error was reported during early startup, this instance
+			// is open for business
+			mistral.StartupComplete()
 		case err := <-ms.Errors:
 			logrus.Errorf("Socket error: %s", err.Error())
 		case <-c:
