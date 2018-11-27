@@ -256,6 +256,8 @@ func main() {
 	go func() {
 		defer waitdelay.Done()
 		var err error
+		logrus.Infoln("Starting HTTP/HTTPS server in mode: %s",
+			listenURL.Scheme)
 		switch listenURL.Scheme {
 		case `http`:
 			err = srv.ListenAndServe()
