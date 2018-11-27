@@ -30,8 +30,13 @@ var unavailable bool
 // shutdown indicates that a shutdown has been requested
 var shutdown bool
 
+// startup indicates that initial startup is in effect. It is
+// initialized true by the init function
+var startup bool
+
 func init() {
 	Handlers = make(map[int]erebos.Handler)
+	startup = true
 }
 
 // Mistral produces messages received via its HTTP handler to Kafka
@@ -57,6 +62,11 @@ func SetUnavailable() {
 // SetShutdown switches the private package variable to true
 func SetShutdown() {
 	shutdown = true
+}
+
+// StartupComplete switches the private package variable to false
+func StartupComplete() {
+	startup = false
 }
 
 // ackClientRequest updates the API client with the result of
