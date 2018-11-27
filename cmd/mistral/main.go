@@ -251,6 +251,24 @@ func main() {
 		}
 	}
 
+	// delay a bit, then check for early startup errors by the
+	// application handlers. Skip starting the HTTP server if a fatal
+	// error has already occured
+	<-time.After(250 * time.Millisecond)
+	select {
+	case err := <-handlerDeath:
+		// early error occured, put it back to initiate the shutdown
+		// sequence
+		logrus.Errorln(`Early startup error detected - HTTP server startup will be skipped`)
+		waitdelay.Use()
+		go func(e error) {
+			defer waitdelay.Done()
+			handlerDeath <- e
+		}(err)
+		goto skipHTTP
+	default:
+	}
+
 	// start http || https server
 	waitdelay.Use()
 	go func() {
@@ -271,6 +289,7 @@ func main() {
 	}()
 
 	// the main loop
+skipHTTP:
 	fault := false
 	shutdown := false
 	startupDelay := time.NewTimer(time.Second)
